@@ -3,6 +3,7 @@ package com.neotica.jetheroes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -19,8 +20,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -32,16 +35,20 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.neotica.jetheroes.model.HeroesData
+import com.neotica.jetheroes.data.HeroViewModel
 import com.neotica.jetheroes.ui.theme.JetHeroesTheme
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.getViewModel
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun JetHeroesApp(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: HeroViewModel = getViewModel()
 ) {
     Box(modifier = modifier) {
         val scope = rememberCoroutineScope()
@@ -49,15 +56,21 @@ fun JetHeroesApp(
         val showButton: Boolean by remember {
             derivedStateOf { listState.firstVisibleItemIndex > 0 }
         }
+        val groupedHeroes by viewModel.groupedHeroes.collectAsState()
         LazyColumn(
             state = listState
         ) {
-            items(HeroesData.heroes, key = { it.id }) {
-                HeroListItem(
-                    name = it.name,
-                    photoUrl = it.photoUrl,
-                    modifier = Modifier.fillMaxWidth()
-                )
+            groupedHeroes.forEach { (initial, heroes) ->
+                stickyHeader { 
+                    CharacterHeader(char = initial)
+                }
+                items(heroes, key = { it.id }) {
+                    HeroListItem(
+                        name = it.name,
+                        photoUrl = it.photoUrl,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         }
         AnimatedVisibility(
@@ -125,6 +138,27 @@ fun ScrollToTopButton(
         )
     ) {
         Icon(imageVector = Icons.Filled.KeyboardArrowUp, contentDescription = null)
+    }
+}
+
+@Composable
+fun CharacterHeader(
+    char: Char,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.primary,
+        modifier = modifier
+    ) {
+        Text(
+            text = char.toString(),
+            fontWeight = FontWeight.Black,
+            color = Color.White,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        )
     }
 }
 
